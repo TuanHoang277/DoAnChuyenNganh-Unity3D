@@ -1,16 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
+using System;
 
 public class GameController : MonoBehaviour {
 
     public GameObject TrajectoryPointPrefeb;
     //public GameObject BallPrefb;
+    public float gravity = 10.0f;
+    public float angle;
+
+    public float vellocity;
 
     public Vector3 startPosBall;
     //public Rigidbody ballRigidboby;
 
     public GameObject ball;
+
+    public Text txtButton;
     
     private bool isPressed, isBallThrown;
     public float power = 25;
@@ -19,6 +27,10 @@ public class GameController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+
+        start = false;
+
+        ball.gameObject.transform.position = startPosBall;
         trajectoryPoints = new List<GameObject>();
         isPressed = isBallThrown = false;
         for (int i = 0; i < numOfTrajectoryPoints; i++)
@@ -28,35 +40,52 @@ public class GameController : MonoBehaviour {
             //dot.renderer.enabled = false;
             trajectoryPoints.Insert(i, dot);
         }
+
+        ball.GetComponent<Rigidbody>().useGravity = false;
 	}
 	
 	// Update is called once per frame
 	void Update () {
-        if (isBallThrown)
-            return;
-        if (Input.GetMouseButtonDown(0))
-        {
-            isPressed = true;
-            ResetBall();
-            //if (!ball)
+        //if (isBallThrown)
+        //    return;
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    isPressed = true;
+        //    ResetBall();
+        //    //if (!ball)
                 
-        }
-        else if (Input.GetMouseButtonUp(0))
+        //}
+        //else if (Input.GetMouseButtonUp(0))
+        //{
+        //    isPressed = false;
+        //    if (!isBallThrown)
+        //    {
+        //        throwBall();
+        //    }
+        //}
+        //if (isPressed)
+        //{
+        //    //luc
+        //    Vector3 vel = GetForceFrom(ball.transform.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        //    float angle = Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg;
+        //    //transform.eulerAngles = new Vector3(0, 0, angle);
+        //    //mass la khoi luong
+        //    //setTrajectoryPoints(startPosBall, vel / ball.GetComponent<Rigidbody>().mass);
+        //}
+
+        if (start) 
         {
-            isPressed = false;
-            if (!isBallThrown)
+            if (time_current <= time_MaxHeight && time_current + Time.deltaTime >= time_MaxHeight)
             {
-                throwBall();
+                Pause();
+                ShowInFoWhenHeightMax(time_MaxHeight, heightMax);
             }
-        }
-        if (isPressed)
-        {
-            //luc
-            Vector3 vel = GetForceFrom(ball.transform.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
-            float angle = Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg;
-            //transform.eulerAngles = new Vector3(0, 0, angle);
-            //mass la khoi luong
-            setTrajectoryPoints(startPosBall, vel / ball.GetComponent<Rigidbody>().mass);
+            else 
+            {
+                HideInfoHeightMax();
+            }
+            time_current += Time.deltaTime;
+
         }
 	}
 
@@ -69,20 +98,91 @@ public class GameController : MonoBehaviour {
         ball.transform.rotation = Quaternion.identity;
     }
 
-    //---------------------------------------	
-    private void throwBall()
+    private Vector2 veloc_save;
+    private bool isPause;
+    public void Pause()
     {
+        veloc_save = ball.GetComponent<Rigidbody>().velocity;
+        isPause = true;
+        ball.GetComponent<Rigidbody>().velocity = Vector2.zero;
+        ball.GetComponent<Rigidbody>().useGravity = false;
+        txtButton.text = "Resune";
+        start = false;
+    }
+
+    public void Resume() 
+    {
+        ball.GetComponent<Rigidbody>().velocity = veloc_save;
+        isPause = false;
+        ball.GetComponent<Rigidbody>().useGravity = true;
+        veloc_save = Vector2.zero;
+        txtButton.text = "Pause";
+        start = true;
+    }
+
+    public void OnClick_ButtonPause() 
+    {
+        if (isPause) 
+        {
+            Resume();
+        }
+        else
+        {
+            Pause();
+        }
+    }
+
+    private float time_MaxHeight;
+    private float heightMax;
+    private bool start;
+    private float time_current;
+
+    //---------------------------------------	
+    [ContextMenu("throwBall")]
+    public void throwBall()
+    {
+        ResetBall();
+        isPause = false;
         ball.SetActive(true);
         ball.GetComponent<Rigidbody>().useGravity = true;
-        Vector2 force = GetForceFrom(ball.transform.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
-        Debug.Log("force = " + force);
-        ball.GetComponent<Rigidbody>().AddForce(force, ForceMode.Impulse);
+        float vx = Mathf.Cos(angle * Mathf.Deg2Rad) * vellocity;
+        float vy = Mathf.Sin(angle * Mathf.Deg2Rad) * vellocity;
+        Vector2 v = new Vector2(vx, vy);
+            //GetForceFrom(ball.transform.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
+
+        ball.GetComponent<Rigidbody>().velocity = v;
+        //Debug.Log("force = " + force);
+        //ball.GetComponent<Rigidbody>().AddForce(force, ForceMode.Impulse);
         isBallThrown = true;
+
+        time_current = 0;
+        time_MaxHeight = vy / gravity;// / Mathf.g
+        heightMax = Mathf.Pow(vy, 2) / gravity / 2 + startPosBall.y;
+
+        start = true;
+    }
+
+    public TextMesh txtTimeMax;
+    public TextMesh txtHeightMax;
+    public GameObject congThucHeightMax;
+
+    public void ShowInFoWhenHeightMax(float timeHeightMax, float heightMax) 
+    {
+        congThucHeightMax.SetActive(true);
+        txtTimeMax.text = String.Format("Time HeightMax = {0}", timeHeightMax);
+        txtHeightMax.text = String.Format("Height Max = {0}", heightMax);
+    }
+
+    public void HideInfoHeightMax() 
+    {
+        congThucHeightMax.SetActive(false);
     }
     //---------------------------------------	
     private Vector2 GetForceFrom(Vector3 fromPos, Vector3 toPos)
     {
-        return (new Vector2(toPos.x, toPos.y) - new Vector2(fromPos.x, fromPos.y)) * power;//*ball.rigidbody.mass;
+        //Vector2 force = new Vector2(Mathf.Cos(alpha) * power, Mathf.Sin(alpha) * power);
+        //return force;
+       return (new Vector2(toPos.x, toPos.y) - new Vector2(fromPos.x, fromPos.y)) * power;//*ball.rigidbody.mass;
     }
 
     void setTrajectoryPoints(Vector3 pStartPosition, Vector3 pVelocity)
@@ -102,5 +202,26 @@ public class GameController : MonoBehaviour {
             trajectoryPoints[i].transform.eulerAngles = new Vector3(0, 0, Mathf.Atan2(pVelocity.y - (Physics.gravity.magnitude) * fTime, pVelocity.x) * Mathf.Rad2Deg);
             fTime += 0.1f;
         }
+    }
+
+    public void ChangePower(float Power)
+    {
+        power = Power;
+    }
+
+    public void ChangeVeloc(float veloc)
+    {
+        vellocity = veloc;
+    }
+
+    public void ChangeAngle(float Angle)
+    {
+        angle = Angle;
+    }
+
+    public void ChangeStartPos(float posY)
+    {
+        startPosBall.y = posY;
+        ball.gameObject.transform.position = startPosBall;
     }
 }
