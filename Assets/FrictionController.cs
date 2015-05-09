@@ -5,6 +5,7 @@ public class FrictionController : MonoBehaviour {
 
     public TextMesh txtTimer;
     private float timeCur;
+    private GameController game;
 
     // Use this for initialization
     void Start()
