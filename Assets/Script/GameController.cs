@@ -224,4 +224,10 @@ public class GameController : MonoBehaviour {
         startPosBall.y = posY;
         ball.gameObject.transform.position = startPosBall;
     }
+
+	public void ReturnMainScene() 
+	{
+		Application.LoadLevel ("DACN_Main");
+		//GameManager.Instance.LoadSceneDACN ();
+	}
 }

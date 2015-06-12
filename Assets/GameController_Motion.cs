@@ -73,4 +73,10 @@ public class GameController_Motion : MonoBehaviour {
         txtValueMass.text = sliderMass.value.ToString();
         rigidMoveObj.mass = sliderMass.value;
     }
+
+	public void ReturnMainScene() 
+	{
+		Application.LoadLevel ("DACN_Main");
+		//GameManager.Instance.LoadSceneDACN ();
+	}
 }

@@ -227,4 +227,10 @@ public class GameController_NemNgang : MonoBehaviour
         startPosBall.y = posY;
         ball.gameObject.transform.position = startPosBall;
     }
+
+	public void ReturnMainScene() 
+	{
+		Application.LoadLevel ("DACN_Main");
+		//GameManager.Instance.LoadSceneDACN ();
+	}
 }
